@@ -37,10 +37,7 @@ class cmd_static(PluginCommand):
         argv = sys.argv[2:] or ['--help']
         args, _ = parser.parse_known_args(argv)
 
-        if args.cmd[0] == "pull":
-            self.pull()
-        elif args.cmd[0] == "push":
-            self.push()
+        getattr(self, args.cmd[0])()
 
     def remove(self, tdir):
         print "Delete temp dir if exists", tdir
