@@ -122,7 +122,7 @@ class cmd_static(PluginCommand):
         if self.git_resp_hdler(status, False, repo_tmp):
             raise Exception('')
 
-    def remotelist(self, repo_tmp):
+    def remote_origin(self, repo_tmp):
         cwd = os.getcwd()
         os.chdir(repo_tmp)
         status = Popen(['git', 'remote', '-v'], stdout=PIPE).communicate()[0]
@@ -282,7 +282,7 @@ class cmd_static(PluginCommand):
             if os.path.exists(repo_tmp):
                 local_mdfied = self.ck_modified(v, repo_tmp, tjs_dir, tcss_dir, tpic_dir)
 
-                if self.remotelist(repo_tmp) != url:
+                if self.remote_origin(repo_tmp) != url:
                     self.remove(repo_tmp)
                     self.clone_into(url)
                 else:
