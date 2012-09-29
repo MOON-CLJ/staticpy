@@ -258,6 +258,7 @@ class cmd_static(PluginCommand):
                 url = "http://code.dapps.douban.com/{name}.git".format(name=k)
             print "found repo", url
 
+            v_or_t = None
             if type(v) == str:
                 v_or_t = v
             else:
