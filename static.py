@@ -294,6 +294,12 @@ class cmd_static(PluginCommand):
                         self.clone_into(url)
             else:
                 self.clone_into(url)
+                ignore_file = os.path.join(self.app_root, '.gitignore')
+                ignores = open(ignore_file, 'U').readlines()
+                if not '.statictmp\n' in ignores:
+                    ignores.append('.statictmp\n')
+                    open(ignore_file, 'wb').write(''.join(ignores))
+
             print "Update success"
             if v_or_t is not None:
                 self.reset(repo_tmp, v_or_t)
