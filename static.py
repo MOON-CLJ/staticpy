@@ -99,7 +99,14 @@ class cmd_static(PluginCommand):
                         print status[1].strip()
                         raise sys.exit("Git error please goto {repo_tmp} to deal with this".format(repo_tmp=repo_tmp))
 
-    def clone_into(self, url):
+    def tmp2ignores(self):
+        ignore_file = os.path.join(self.app_root, '.gitignore')
+        ignores = open(ignore_file, 'U').readlines()
+        if not '.statictmp\n' in ignores:
+            ignores.append('.statictmp\n')
+            open(ignore_file, 'wb').write(''.join(ignores))
+
+    def clone2tmp(self, url):
         tdir = self.temp_dir(url)
 
         status = Popen(['git', 'clone', url, tdir],
@@ -212,7 +219,7 @@ class cmd_static(PluginCommand):
                     return True
         return True
 
-    def cp_to_dir(self, sdir, tdir, mdfied):
+    def cp2dir(self, sdir, tdir, mdfied):
         #prepare dir
         try:
             os.makedirs(tdir)
@@ -231,15 +238,15 @@ class cmd_static(PluginCommand):
                 source_dir = os.path.join(root, f)
 
                 if f.endswith(".js"):
-                    self.cp_to_dir(source_dir, js_dir, mdfied)
+                    self.cp2dir(source_dir, js_dir, mdfied)
 
                 if f.endswith(".css"):
-                    self.cp_to_dir(source_dir, css_dir, mdfied)
+                    self.cp2dir(source_dir, css_dir, mdfied)
 
                 pic_suffixs = [".jpg", ".jpeg", ".bmp", ".png"]
                 for suffix in pic_suffixs:
                     if f.endswith(suffix):
-                        self.cp_to_dir(source_dir, pic_dir, mdfied)
+                        self.cp2dir(source_dir, pic_dir, mdfied)
 
     def pull(self):
         self.set_approot()
@@ -285,20 +292,16 @@ class cmd_static(PluginCommand):
 
                 if self.remote_origin(repo_tmp) != url:
                     self.remove(repo_tmp)
-                    self.clone_into(url)
+                    self.clone2tmp(url)
                 else:
                     try:
                         self.pulldown(repo_tmp)
                     except Exception:
                         self.remove(repo_tmp)
-                        self.clone_into(url)
+                        self.clone2tmp(url)
             else:
-                self.clone_into(url)
-                ignore_file = os.path.join(self.app_root, '.gitignore')
-                ignores = open(ignore_file, 'U').readlines()
-                if not '.statictmp\n' in ignores:
-                    ignores.append('.statictmp\n')
-                    open(ignore_file, 'wb').write(''.join(ignores))
+                self.clone2tmp(url)
+                self.tmp2ignores()
 
             print "Update success"
             if v_or_t is not None:
@@ -308,21 +311,9 @@ class cmd_static(PluginCommand):
                 for k1, v1 in v["file"].items():
                     sdir = repo_tmp + k1
                     tdir = self.app_root + v1
-                    self.cp_to_dir(sdir, tdir, local_mdfied)
+                    self.cp2dir(sdir, tdir, local_mdfied)
             else:
                 self.cpfiles(repo_tmp, local_mdfied, tjs_dir, tcss_dir, tpic_dir)
 
     def push(self):
         print "haha, wo shi @clj"
-
-
-if __name__ == '__main__':
-    import setuptools
-    setuptools.setup(
-        name='cmdstatic',
-        py_modules=['static'],
-        entry_points="""
-        [dae.plugins]
-        static=static:cmd_static
-        """
-    )
