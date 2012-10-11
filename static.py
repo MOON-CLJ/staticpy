@@ -139,7 +139,7 @@ class cmd_static(PluginCommand):
         args = shlex.split(build_cmd)
         status = Popen(args, stdout=PIPE, stderr=PIPE).communicate()
         os.chdir(cwd)
-        self.resp_hdler(status, True, None, True):
+        self.resp_hdler(status, True, None, True)
 
     def remote_origin(self, repo_tmp):
         cwd = os.getcwd()
