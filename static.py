@@ -3,6 +3,7 @@ import os
 import time
 import yaml
 import shutil
+import shlex
 from dae.commands.plugin import PluginCommand
 from argparse import ArgumentParser
 from subprocess import Popen, PIPE
@@ -78,11 +79,12 @@ class cmd_static(PluginCommand):
         tdir = os.path.join(self.app_root, tdir)
         return tdir
 
-    def git_resp_hdler(self, status, raiseif, repo_tmp=None):
+    def resp_hdler(self, status, raiseerr=True, repo_tmp=None, presult=False):
+        # if stderr not empty
         if status[1] != "":
-            if raiseif:
+            if raiseerr:
                 print status[1].strip()
-                raise sys.exit("Git error please handle it then Continue")
+                raise sys.exit("Cmd error please handle it then Continue")
             else:
                 print "Static tmp folder {repo_tmp} will remove for update, do you want to continue (y/n)? ".format(repo_tmp=repo_tmp),
                 ans = getch()
@@ -98,6 +100,8 @@ class cmd_static(PluginCommand):
                     elif ans == "n":
                         print status[1].strip()
                         raise sys.exit("Git error please goto {repo_tmp} to deal with this".format(repo_tmp=repo_tmp))
+        if presult:
+            print status[0].strip()
 
     def tmp2ignores(self):
         ignore_file = os.path.join(self.app_root, '.gitignore')
@@ -111,7 +115,7 @@ class cmd_static(PluginCommand):
 
         status = Popen(['git', 'clone', url, tdir],
                        stdout=PIPE, stderr=PIPE).communicate()
-        self.git_resp_hdler(status, True)
+        self.resp_hdler(status, True)
 
     def reset(self, tdir, v_or_t):
         cwd = os.getcwd()
@@ -126,8 +130,16 @@ class cmd_static(PluginCommand):
         os.chdir(repo_tmp)
         status = Popen(['git', 'pull'], stdout=PIPE, stderr=PIPE).communicate()
         os.chdir(cwd)
-        if self.git_resp_hdler(status, False, repo_tmp):
+        if self.resp_hdler(status, False, repo_tmp):
             raise Exception('')
+
+    def cmd_run(self, repo_tmp, build_cmd):
+        cwd = os.getcwd()
+        os.chdir(repo_tmp)
+        args = shlex.split(build_cmd)
+        status = Popen(args, stdout=PIPE, stderr=PIPE).communicate()
+        os.chdir(cwd)
+        self.resp_hdler(status, True, None, True):
 
     def remote_origin(self, repo_tmp):
         cwd = os.getcwd()
@@ -155,37 +167,37 @@ class cmd_static(PluginCommand):
             return tfile
         return None
 
-    def ck_modified(self, v, repo_tmp, *dirs):
-        js_dir, css_dir, pic_dir = dirs
+    def dir_modified(self, sdir, limitstatic=False, *dirs):
+        if len(dirs) == 3:
+            js_dir, css_dir, pic_dir = dirs
+        else:
+            tdir = dirs[0]
 
         mdfied_files = set()
-        if "file" in v:
-            for k1, v1 in v["file"].items():
-                sdir = repo_tmp + k1
-                tdir = self.app_root + v1
-                mdfiedif = self.modified(sdir, tdir)
-                if mdfiedif:
-                    mdfied_files.add(mdfiedif)
-        else:
-            for root, dirs, files in os.walk(repo_tmp):
-                for f in files:
-                    sdir = os.path.join(root, f)
+        for root, dirs, files in os.walk(sdir):
+            for f in files:
+                source_dir = os.path.join(root, f)
 
-                    mdfiedif = None
+                modified = None
+                if limitstatic:
                     if f.endswith(".js"):
-                        mdfiedif = self.modified(sdir, js_dir)
+                        modified = self.modified(source_dir, js_dir)
 
                     if f.endswith(".css"):
-                        mdfiedif = self.modified(sdir, css_dir)
+                        modified = self.modified(source_dir, css_dir)
 
-                    pic_suffixs = [".jpg", ".jpeg", ".bmp", ".png"]
+                    pic_suffixs = [".jpg", ".jpeg", ".bmp", ".png", "ico"]
                     for suffix in pic_suffixs:
                         if f.endswith(suffix):
-                            mdfiedif = self.modified(sdir, pic_dir)
+                            modified = self.modified(source_dir, pic_dir)
                             break
+                else:
+                    # recurse
+                    tdir_rcs = tdir + root[len(sdir):]
+                    modified = self.modified(source_dir, tdir_rcs)
 
-                    if mdfiedif:
-                        mdfied_files.add(mdfiedif)
+                if modified:
+                    mdfied_files.add(modified)
 
         return mdfied_files
 
@@ -228,25 +240,33 @@ class cmd_static(PluginCommand):
 
         if self.cover_file(sdir, tdir, mdfied):
             shutil.copy(sdir, tdir)
-            print "Copy", sdir, "\n  to:", tdir
+            print "Copy", sdir, "\n ->", tdir
 
-    def cpfiles(self, sdir, mdfied, *dirs):
-        js_dir, css_dir, pic_dir = dirs
+    def cpdir2dir(self, sdir, mdfied, limitstatic=False, *dirs):
+        if len(dirs) == 3:
+            js_dir, css_dir, pic_dir = dirs
+        else:
+            tdir = dirs[0]
 
         for root, dirs, files in os.walk(sdir):
             for f in files:
                 source_dir = os.path.join(root, f)
 
-                if f.endswith(".js"):
-                    self.cp2dir(source_dir, js_dir, mdfied)
+                if limitstatic:
+                    if f.endswith(".js"):
+                        self.cp2dir(source_dir, js_dir, mdfied)
 
-                if f.endswith(".css"):
-                    self.cp2dir(source_dir, css_dir, mdfied)
+                    if f.endswith(".css"):
+                        self.cp2dir(source_dir, css_dir, mdfied)
 
-                pic_suffixs = [".jpg", ".jpeg", ".bmp", ".png"]
-                for suffix in pic_suffixs:
-                    if f.endswith(suffix):
-                        self.cp2dir(source_dir, pic_dir, mdfied)
+                    pic_suffixs = [".jpg", ".jpeg", ".bmp", ".png", "ico"]
+                    for suffix in pic_suffixs:
+                        if f.endswith(suffix):
+                            self.cp2dir(source_dir, pic_dir, mdfied)
+                else:
+                    # recurse
+                    tdir_rcs = tdir + root[len(sdir):]
+                    self.cp2dir(source_dir, tdir_rcs, mdfied)
 
     def pull(self):
         self.set_approot()
@@ -280,6 +300,10 @@ class cmd_static(PluginCommand):
                 if "pic_dir" in v:
                     tpic_dir = v["pic_dir"]
 
+            build_cmds = []
+            if "build_cmd" in v:
+                build_cmds = v["build_cmd"]
+
             tjs_dir = self.app_root + tjs_dir
             tcss_dir = self.app_root + tcss_dir
             tpic_dir = self.app_root + tpic_dir
@@ -288,7 +312,22 @@ class cmd_static(PluginCommand):
             print "Update repo", url
             local_mdfied = set()
             if os.path.exists(repo_tmp):
-                local_mdfied = self.ck_modified(v, repo_tmp, tjs_dir, tcss_dir, tpic_dir)
+                # check modify
+                if "file" in v:
+                    for k1, v1 in v["file"].items():
+                        sdir = repo_tmp + k1
+                        tdir = self.app_root + v1
+                        if os.path.isfile(sdir):
+                            modified = self.modified(sdir, tdir)
+                            if modified:
+                                local_mdfied.add(modified)
+                        elif os.path.isdir(sdir):
+                            modifieds = self.dir_modified(sdir, False, tdir)
+
+                            local_mdfied = local_mdfied | modifieds
+                else:
+                    modifieds = self.dir_modified(repo_tmp, True, tjs_dir, tcss_dir, tpic_dir)
+                    local_mdfied = local_mdfied | modifieds
 
                 if self.remote_origin(repo_tmp) != url:
                     self.remove(repo_tmp)
@@ -304,16 +343,26 @@ class cmd_static(PluginCommand):
                 self.tmp2ignores()
 
             print "Update success"
+
             if v_or_t is not None:
                 self.reset(repo_tmp, v_or_t)
 
+            for cmd in build_cmds:
+                print "\nExecute:", cmd
+                self.cmd_run(repo_tmp, cmd)
+
+            # ready to cp files
             if "file" in v:
                 for k1, v1 in v["file"].items():
                     sdir = repo_tmp + k1
                     tdir = self.app_root + v1
-                    self.cp2dir(sdir, tdir, local_mdfied)
+                    if os.path.isfile(sdir):
+                        self.cp2dir(sdir, tdir, local_mdfied)
+                    elif os.path.isdir(sdir):
+                        self.cpdir2dir(sdir, local_mdfied, False, tdir)
+
             else:
-                self.cpfiles(repo_tmp, local_mdfied, tjs_dir, tcss_dir, tpic_dir)
+                self.cpdir2dir(repo_tmp, local_mdfied, True, tjs_dir, tcss_dir, tpic_dir)
 
     def push(self):
         print "haha, wo shi @clj"

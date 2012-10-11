@@ -1,5 +1,5 @@
-*.swo
-*.swp
+*.py[co]
+*.sw[po]
 build/
 *.egg-info/
 dist/
