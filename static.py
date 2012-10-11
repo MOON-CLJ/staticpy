@@ -79,12 +79,17 @@ class cmd_static(PluginCommand):
         tdir = os.path.join(self.app_root, tdir)
         return tdir
 
-    def resp_hdler(self, status, raiseerr=True, repo_tmp=None, presult=False):
+    def resp_hdler(self, status, err_raise=True, repo_tmp=None, err_p=False, result_p=False):
         # if stderr not empty
         if status[1] != "":
-            if raiseerr:
-                print status[1].strip()
-                raise sys.exit("Cmd error please handle it then Continue")
+            if err_p:
+                print "\033[31m", status[1].strip(), "\033[0m\n"
+                print "\033[31m error when execute this cmd\033[0m\n"
+                return
+
+            if err_raise:
+                print "\033[31m", status[1].strip(), "\033[0m\n"
+                raise sys.exit("Git error please handle it then Continue")
             else:
                 print "Static tmp folder {repo_tmp} will remove for update, do you want to continue (y/n)? ".format(repo_tmp=repo_tmp),
                 ans = getch()
@@ -100,7 +105,7 @@ class cmd_static(PluginCommand):
                     elif ans == "n":
                         print status[1].strip()
                         raise sys.exit("Git error please goto {repo_tmp} to deal with this".format(repo_tmp=repo_tmp))
-        if presult:
+        if result_p:
             print status[0].strip()
 
     def tmp2ignores(self):
@@ -111,6 +116,7 @@ class cmd_static(PluginCommand):
             open(ignore_file, 'wb').write(''.join(ignores))
 
     def clone2tmp(self, url):
+        print " git clone", "may take a while, please wait..."
         tdir = self.temp_dir(url)
 
         status = Popen(['git', 'clone', url, tdir],
@@ -139,7 +145,7 @@ class cmd_static(PluginCommand):
         args = shlex.split(build_cmd)
         status = Popen(args, stdout=PIPE, stderr=PIPE).communicate()
         os.chdir(cwd)
-        self.resp_hdler(status, True, None, True)
+        self.resp_hdler(status, False, None, True, True)
 
     def remote_origin(self, repo_tmp):
         cwd = os.getcwd()
@@ -181,14 +187,21 @@ class cmd_static(PluginCommand):
                 modified = None
                 if limitstatic:
                     if f.endswith(".js"):
+                        if js_dir is None:
+                            raise sys.exit("static.yaml error: no js_dir in any level")
                         modified = self.modified(source_dir, js_dir)
 
                     if f.endswith(".css"):
+                        if css_dir is None:
+                            raise sys.exit("static.yaml error: no css_dir in any level")
+
                         modified = self.modified(source_dir, css_dir)
 
                     pic_suffixs = [".jpg", ".jpeg", ".bmp", ".png", "ico"]
                     for suffix in pic_suffixs:
                         if f.endswith(suffix):
+                            if pic_dir is None:
+                                raise sys.exit("static.yaml error: no pic_dir in any level")
                             modified = self.modified(source_dir, pic_dir)
                             break
                 else:
@@ -254,14 +267,20 @@ class cmd_static(PluginCommand):
 
                 if limitstatic:
                     if f.endswith(".js"):
+                        if js_dir is None:
+                            raise sys.exit("static.yaml error: no js_dir in any level")
                         self.cp2dir(source_dir, js_dir, mdfied)
 
                     if f.endswith(".css"):
+                        if css_dir is None:
+                            raise sys.exit("static.yaml error: no css_dir in any level")
                         self.cp2dir(source_dir, css_dir, mdfied)
 
                     pic_suffixs = [".jpg", ".jpeg", ".bmp", ".png", "ico"]
                     for suffix in pic_suffixs:
                         if f.endswith(suffix):
+                            if pic_dir is None:
+                                raise sys.exit("static.yaml error: no pic_dir in any level")
                             self.cp2dir(source_dir, pic_dir, mdfied)
                 else:
                     # recurse
@@ -271,12 +290,16 @@ class cmd_static(PluginCommand):
     def pull(self):
         self.set_approot()
         conf = self.static_conf()
-        js_dir = conf["js_dir"]
-        css_dir = conf["css_dir"]
-        pic_dir = conf["pic_dir"]
+        js_dir, css_dir, pic_dir = [None] * 3
+        if "js_dir" in conf:
+            js_dir = conf["js_dir"]
+        if "css_dir" in conf:
+            css_dir = conf["css_dir"]
+        if "pic_dir" in conf:
+            pic_dir = conf["pic_dir"]
 
         for k, v in conf["repos"].items():
-            print "\n", "** " * 10
+            print "\n", "\033[34m", "** " * 10, "\033[0m\n"
 
             tjs_dir, tcss_dir, tpic_dir = js_dir, css_dir, pic_dir
             if "url" in v:
@@ -304,9 +327,12 @@ class cmd_static(PluginCommand):
             if "build_cmd" in v:
                 build_cmds = v["build_cmd"]
 
-            tjs_dir = self.app_root + tjs_dir
-            tcss_dir = self.app_root + tcss_dir
-            tpic_dir = self.app_root + tpic_dir
+            if tjs_dir:
+                tjs_dir = self.app_root + tjs_dir
+            if tcss_dir:
+                tcss_dir = self.app_root + tcss_dir
+            if tpic_dir:
+                tpic_dir = self.app_root + tpic_dir
             repo_tmp = self.temp_dir(url)
 
             print "Update repo", url
