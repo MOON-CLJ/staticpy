@@ -6,7 +6,8 @@ import shutil
 import shlex
 from dae.commands.plugin import PluginCommand
 from argparse import ArgumentParser
-from subprocess import Popen, PIPE
+import subprocess
+from subprocess import Popen, PIPE, STDOUT
 import difflib
 import termios
 import tty
@@ -145,9 +146,10 @@ class cmd_static(PluginCommand):
         cwd = os.getcwd()
         os.chdir(repo_tmp)
         args = shlex.split(build_cmd)
-        status = Popen(args, stdout=PIPE, stderr=PIPE).communicate()
+        #status = Popen(args, stdout=PIPE, stderr=PIPE).communicate()
+        print subprocess.check_output(args, stderr=subprocess.STDOUT, shell=False)
         os.chdir(cwd)
-        self.resp_hdler(status, False, None, True, True)
+        #self.resp_hdler(status, False, None, True, True)
 
     def remote_origin(self, repo_tmp):
         cwd = os.getcwd()
