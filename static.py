@@ -7,7 +7,7 @@ import shlex
 from dae.commands.plugin import PluginCommand
 from argparse import ArgumentParser
 import subprocess
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
 import difflib
 import termios
 import tty
@@ -82,14 +82,9 @@ class cmd_static(PluginCommand):
         tdir = os.path.join(self.app_root, tdir)
         return tdir
 
-    def resp_hdler(self, status, err_raise=True, repo_tmp=None, err_p=False, result_p=False):
+    def resp_hdler(self, status, err_raise=True, repo_tmp=None, result_p=False):
         # if stderr not empty
         if status[1] != "":
-            if err_p:
-                print "\033[31m", status[1].strip(), "\033[0m\n"
-                print "\033[31m error when execute this cmd\033[0m\n"
-                return
-
             if err_raise:
                 print "\033[31m", status[1].strip(), "\033[0m\n"
                 raise sys.exit("Git error please handle it then Continue")
@@ -119,12 +114,10 @@ class cmd_static(PluginCommand):
             open(ignore_file, 'wb').write(''.join(ignores))
 
     def clone2tmp(self, url):
-        print " git clone", "may take a while, please wait..."
         tdir = self.temp_dir(url)
 
-        status = Popen(['git', 'clone', url, tdir],
-                       stdout=PIPE, stderr=PIPE).communicate()
-        self.resp_hdler(status, True)
+        args = ['git', 'clone', url, tdir]
+        print subprocess.check_output(args)
 
     def reset(self, tdir, v_or_t):
         cwd = os.getcwd()
@@ -146,10 +139,12 @@ class cmd_static(PluginCommand):
         cwd = os.getcwd()
         os.chdir(repo_tmp)
         args = shlex.split(build_cmd)
-        #status = Popen(args, stdout=PIPE, stderr=PIPE).communicate()
-        print subprocess.check_output(args, stderr=subprocess.STDOUT, shell=False)
+        try:
+            print subprocess.check_output(args)
+        except subprocess.CalledProcessError:
+            print "\033[31m may error when execute '{cmd}'\033[0m\n".format(cmd=build_cmd)
+
         os.chdir(cwd)
-        #self.resp_hdler(status, False, None, True, True)
 
     def remote_origin(self, repo_tmp):
         cwd = os.getcwd()
@@ -377,9 +372,10 @@ class cmd_static(PluginCommand):
             if v_or_t is not None:
                 self.reset(repo_tmp, v_or_t)
 
-            for cmd in build_cmds:
-                print "\nExecute:", cmd
-                self.cmd_run(repo_tmp, cmd)
+            if build_cmds is not None:
+                for cmd in build_cmds:
+                    print "\nExecute:", cmd
+                    self.cmd_run(repo_tmp, cmd)
 
             # ready to cp files
             if "file" in v:
