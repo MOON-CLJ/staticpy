@@ -41,7 +41,7 @@ class cmd_static(PluginCommand):
         getattr(self, args.cmd[0])()
 
     def remove(self, tdir):
-        print "Delete temp dir if exists", tdir
+        print "Delete temp dir if exists", "[root]" + tdir[len(self.app_root) + 1:]
         try:
             shutil.rmtree(tdir)
         except OSError:
@@ -50,9 +50,11 @@ class cmd_static(PluginCommand):
     def set_approot(self):
         cwd = os.getcwd()
         print "cwd:", cwd
+
         while cwd != "/":
             if "app.yaml" in os.listdir(cwd):
                 print "app root:", cwd
+
                 self.app_root = cwd
                 return
             cwd = os.path.dirname(cwd)
@@ -91,7 +93,7 @@ class cmd_static(PluginCommand):
                 print "\033[31m", status[1].strip(), "\033[0m\n"
                 raise sys.exit("Git error please handle it then Continue")
             else:
-                print "Static tmp folder {repo_tmp} will remove for update, do you want to continue (y/n)? ".format(repo_tmp=repo_tmp),
+                print "Static tmp folder {repo_tmp} will remove for update, do you want to continue (y/n)? ".format(repo_tmp="[root]" + repo_tmp[len(self.app_root) + 1:]),
                 ans = getch()
                 print
                 while 1:
@@ -104,7 +106,7 @@ class cmd_static(PluginCommand):
                         return True
                     elif ans == "n":
                         print status[1].strip()
-                        raise sys.exit("Git error please goto {repo_tmp} to deal with this".format(repo_tmp=repo_tmp))
+                        raise sys.exit("Git error please goto {repo_tmp} to deal with this".format(repo_tmp="[root]" + repo_tmp[len(self.app_root) + 1:]))
         if result_p:
             print status[0].strip()
 
@@ -219,7 +221,7 @@ class cmd_static(PluginCommand):
         if os.path.exists(tfile):
             if self.modified(sdir, tdir):
                 if tfile in mdfied:
-                    print "{tfile} have been modified in local, do you want to cover(y/n/i[gnore])? ".format(tfile=tfile),
+                    print "{tfile} have been modified in local, do you want to cover(y/n/i[gnore])? ".format(tfile="[root]" + tfile[len(self.app_root) + 1:]),
                     ans = getch()
                     print
                     while 1:
@@ -240,7 +242,7 @@ class cmd_static(PluginCommand):
                             ans = getch()
                             print
                 else:
-                    print "{tfile} in local not modified, auto Update it to new version".format(tfile=tfile)
+                    print "{tfile} in local not modified, auto Update it to new version".format(tfile="[root]" + tfile[len(self.app_root) + 1:])
                     return True
         return True
 
@@ -253,7 +255,7 @@ class cmd_static(PluginCommand):
 
         if self.cover_file(sdir, tdir, mdfied):
             shutil.copy(sdir, tdir)
-            print "Copy", sdir, "\n ->", tdir
+            print "Copy", "[root]" + sdir[len(self.app_root) + 1:], "\n ->", "[root]" + tdir[len(self.app_root) + 1:]
 
     def cpdir2dir(self, sdir, mdfied, limitstatic=False, *dirs):
         if len(dirs) == 3:
