@@ -1,3 +1,10 @@
 # dae static
-**install**: python setup.py install<br/>
-**usage**: dae static pull(source dae first)
+
+Static File Manager
+
+## Installation
+```python setup.py install
+```
+## usage
+```staticpy pull
+```

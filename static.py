@@ -4,7 +4,6 @@ import time
 import yaml
 import shutil
 import shlex
-from dae.commands.plugin import PluginCommand
 from argparse import ArgumentParser
 import subprocess
 from subprocess import Popen, PIPE
@@ -29,7 +28,7 @@ def getch():
     return ch
 
 
-class cmd_static(PluginCommand):
+class cmd_static():
     app_root = ""
 
     def run(self):
@@ -396,3 +395,10 @@ class cmd_static(PluginCommand):
 
     def push(self):
         print "haha, wo shi @clj"
+
+
+def main():
+    print 'hehe'
+
+if __name__ == '__main__':
+    main()
