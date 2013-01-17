@@ -15,14 +15,14 @@ except ImportError:
 setup(
     name='staticpy',
     version='0.2',
-    url='https://github.com/MOON-CLJ/dae_static',
+    url='https://github.com/MOON-CLJ/staticpy',
     license='BSD',
     author='CLJ',
     author_email='lijunli2598@gmail.com',
     description='dae is a static file manager(not rely on dae)',
     py_modules=['static'],
     install_requires=[
-        'PyYaml',
+        'clint',
     ],
     **kw
 )

@@ -1,0 +1,11 @@
+{
+    'repos': [
+        'jquery': {
+            'tag': '1.4.1',
+            'url': 'git://github.com/jquery/jquery.git',
+            'file': {
+                '/src': '/temp_e',
+            },
+        },
+    ]
+}
