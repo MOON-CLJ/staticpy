@@ -1,16 +1,12 @@
-try:
-    from setuptools import setup
-    kw = {
-        'entry_points': {
-            'console_scripts': [
-                'staticpy = static:main',
-            ],
-        },
-        'zip_safe': False,
-    }
-except ImportError:
-    from distutils.core import setup
-    kw = {'scripts': ['static.py']}
+from setuptools import setup
+kw = {
+    'entry_points': {
+        'console_scripts': [
+            'staticpy = static.core:main',
+        ],
+    },
+    'zip_safe': False,
+}
 
 setup(
     name='staticpy',
@@ -19,10 +15,13 @@ setup(
     license='BSD',
     author='CLJ',
     author_email='lijunli2598@gmail.com',
-    description='dae is a static file manager(not rely on dae)',
-    py_modules=['static'],
+    description='staticpy is a static file manager',
+    py_modules=['static.core', 'static.utils'],
     install_requires=[
         'clint',
+    ],
+    dependency_links=[
+        'https://github.com/MOON-CLJ/clint/tarball/develop#egg=clint',
     ],
     **kw
 )

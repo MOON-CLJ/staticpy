@@ -1,11 +1,16 @@
 {
-    'repos': [
-        'jquery': {
-            'tag': '1.4.1',
-            'url': 'git://github.com/jquery/jquery.git',
-            'file': {
-                '/src': '/temp_e',
+    "staticpy": {
+        "jquery": {
+            "tag": "1.6.1",
+            "build": [
+                "npm install grunt-compare-size",
+                "npm install grunt-git-authors",
+                "grunt custom:-ajax"
+            ],
+            "url": "git://github.com/jquery/jquery.git",
+            "file": {
+                "/src": "/temp_e",
             },
-        },
-    ]
+        }
+    }
 }
