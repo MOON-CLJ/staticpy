@@ -33,8 +33,11 @@ def gen_repo_conf(global_conf, conf_json, repo_name):
         if repo_conf[k]:
             repo_conf[k] = os.path.join(global_conf['app_root'], repo_conf[k].lstrip('/'))
 
+    # 读取特有配置
     repo_conf['host'] = global_conf['host_dict'][conf_json['host']] if 'host' in conf_json else global_conf['host_dict']['github']
     repo_conf['host'] = repo_conf['host'] % repo_name
+    repo_conf['commit'] = conf_json.get('commit') or conf_json.get('tag')
+    repo_conf['build'] = conf_json.get('build')
     return repo_conf
 
 
