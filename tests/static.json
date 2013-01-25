@@ -1,5 +1,9 @@
 {
     "staticpy": {
+        "hostDict": {
+            "code": "http://code.dapps.douban.com/",
+            "gitcafe": "git://gitcafe.com/"
+        },
         "jquery": {
             "tag": "1.6.1",
             "build": [
@@ -7,10 +11,9 @@
                 "npm install grunt-git-authors",
                 "grunt custom:-ajax"
             ],
-            "url": "git://github.com/jquery/jquery.git",
             "file": {
-                "/src": "/temp_e",
-            },
+                "/src": "/temp_e"
+            }
         }
     }
 }

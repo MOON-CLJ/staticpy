@@ -19,6 +19,7 @@ setup(
     py_modules=['static.core', 'static.utils'],
     install_requires=[
         'clint',
+        'simplejson'
     ],
     dependency_links=[
         'https://github.com/MOON-CLJ/clint/tarball/develop#egg=clint',
