@@ -6,6 +6,7 @@ import errno
 import simplejson as json
 import time
 import difflib
+import shlex
 
 
 defaultHostDict = {
@@ -36,6 +37,7 @@ def gen_repo_conf(global_conf, conf_json, repo_name):
     repo_conf['host'] = global_conf['host_dict'][conf_json['host']] if 'host' in conf_json else global_conf['host_dict']['github']
     repo_conf['host'] = repo_conf['host'] % repo_name
     repo_conf['commit'] = conf_json.get('commit') or conf_json.get('tag')
+    repo_conf['commit'] = str(repo_conf['commit'])
     repo_conf['build'] = conf_json.get('build')
     repo_conf['file'] = conf_json.get('file')
     repo_conf['tmpdir'] = os.path.join(global_conf['app_root'], '.staticpytmp/%s' % repo_name)
@@ -91,12 +93,31 @@ def file_file_modified(source_file, target_file):
 
 def clone(remote_url, tmp_repo_dir):
     args = ['git', 'clone', remote_url, tmp_repo_dir]
-    print subprocess.check_output(args)
+    subprocess.check_output(args)
 
 
 def fetch(tmp_repo_dir):
     args = ['git', 'fetch', tmp_repo_dir]
-    print subprocess.check_output(args)
+    subprocess.check_output(args)
+
+
+def checkout(tmp_repo_dir, commit):
+    cwd = os.getcwd()
+    os.chdir(tmp_repo_dir)
+    args = ['git', 'checkout', commit, '-qf']
+    try:
+        subprocess.check_output(args)
+    except subprocess.CalledProcessError:
+        raise NotMatchCommit()
+    os.chdir(cwd)
+
+
+def build(tmp_repo_dir, cmd):
+    cwd = os.getcwd()
+    os.chdir(tmp_repo_dir)
+    args = shlex.split(cmd)
+    subprocess.check_output(args)
+    os.chdir(cwd)
 
 
 def add_tmpdir2gitignore(app_root):
@@ -112,4 +133,8 @@ def add_tmpdir2gitignore(app_root):
 
 
 class NotFoundAppRoot(IOError):
+    pass
+
+
+class NotMatchCommit(Exception):
     pass
