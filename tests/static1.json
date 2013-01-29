@@ -1,0 +1,16 @@
+{
+    "staticpy": {
+        "hostDict": {
+            "code": "http://code.dapps.douban.com/",
+            "gitcafe": "git://gitcafe.com/"
+        },
+        "jquery/jquery": {
+            "tag": "1.6.1",
+            "build": [
+            ],
+            "file": {
+                "/src": "/temp_e"
+            }
+        }
+    }
+}
