@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from subprocess import Popen, PIPE
 from clint.utils import tsplit
 from clint.textui import puts, indent, colored
@@ -173,7 +176,7 @@ def notice_if_cover_file(source_file, target_file):
         if ans == 'y':
             return True
         elif ans == 'n':
-            raise sys.exit('You can continue when you finish editing this file')
+            raise sys.exit('You can continue when you finish editing this file %s' % target_file)
         elif ans == 'i':
             return False
         else:
