@@ -4,8 +4,10 @@
 
 from clint import args
 from clint.textui import puts, indent, colored
+from clint.utils import mkdir_p
 from .utils import get_app_root, get_static_conf, gen_repo_conf, \
     dir_dir_modified, file_dir_modified, file_file_modified, \
+    cp_file2file, cp_file2dir, cp_dir2dir, \
     get_remote_url, clone, fetch, checkout, build, add_tmpdir2gitignore, \
     NotFoundAppRoot, NotMatchCommit, defaultHostDict
 import simplejson as json
@@ -99,8 +101,31 @@ def pull():
                         puts(colored.green('Execute %s success' % cmd))
                 except (OSError, subprocess.CalledProcessError):
                     with indent(4, quote=colored.clean('#')):
-                        puts(colored.red('Execute %s fail' % cmd))
-                        sys.exit(1)
+                        puts(colored.red('Execute %s fail in [%s]' % (cmd, repo_conf['tmpdir'])))
+                    sys.exit(1)
+
+        # 拷贝文件
+        if repo_conf.get('file'):
+            with indent(4, quote=colored.clean('#')):
+                puts(colored.green('Copying files'))
+
+            for source, target in repo_conf['file'].iteritems():
+                # isdir, isfile的判断，若不存在，统一为False
+                # 所以若需要先创建target所需的folder
+                # 即source的folder最后的'/'可省略，但target的folder最后的'/'不能省略
+                # 否则被视为文件，而创建folder失败, 导致拷贝失败
+                if not os.path.exists(target) and '/' in target:
+                    mkdir_p(target[:target.rfind('/')])
+
+                if os.path.isdir(source):
+                    if os.path.isdir(target):
+                        cp_dir2dir(source, target, local_mdfied)
+                elif os.path.isfile(source):
+                    if os.path.isdir(target):
+                        cp_file2dir(source, target, local_mdfied)
+                    else:
+                        # 此处不能用isfile判断，因为文件有可能不存在
+                        cp_file2file(source, target, local_mdfied)
 
 
 def main():
